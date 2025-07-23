@@ -1,0 +1,164 @@
+{
+  "_version": "1.60.0",
+  "sap.app": {
+    "id": "pdfdocumentreader.pdfreader",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": {
+      "version": "0.0.1"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "sourceTemplate": {
+      "id": "@sap/generator-fiori:lrop",
+      "version": "1.18.3",
+      "toolsId": "4737427a-11a5-478f-82aa-2c4c36247dd0"
+    },
+    "dataSources": {
+      "mainService": {
+        "uri": "/service/pdfdocumentreaderService/",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "odataVersion": "4.0"
+        }
+      }
+    },
+    "crossNavigation": {
+      "inbounds": {
+        "pdfdocumentreaderpdfreader-display": {
+          "semanticObject": "pdfdocumentreaderpdfreader",
+          "action": "display",
+          "title": "{{pdfdocumentreaderpdfreader-display.flpTitle}}",
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.120.13",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.fe.templates": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "pdfdocumentreader.pdfreader.i18n.i18n"
+        }
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      },
+      "@i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "uri": "i18n/i18n.properties"
+      }
+    },
+    "resources": {
+      "css": []
+    },
+    "routing": {
+      "config": {},
+      "routes": [
+        {
+          "pattern": ":?query:",
+          "name": "documentList",
+          "target": "documentList"
+        },
+        {
+          "pattern": "document({key}):?query:",
+          "name": "documentObjectPage",
+          "target": "documentObjectPage"
+        }
+      ],
+      "targets": {
+        "documentList": {
+          "type": "Component",
+          "id": "documentList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/document",
+              "variantManagement": "Page",
+              "navigation": {
+                "document": {
+                  "detail": {
+                    "route": "documentObjectPage"
+                  }
+                }
+              },
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable"
+                  },
+                  "actions": {
+                    "readPdf": {
+                      "press": "pdfdocumentreader.pdfreader.ext.controller.LerPdf.lerPdf",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "text": "Ler PDF"
+                    }
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
+        },
+        "documentObjectPage": {
+          "type": "Component",
+          "id": "documentObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "editableHeaderContent": false,
+              "contextPath": "/document"
+            }
+          }
+        }
+      }
+    }
+  },
+  "sap.fiori": {
+    "registrationIds": [],
+    "archeType": "transactional"
+  }
+}

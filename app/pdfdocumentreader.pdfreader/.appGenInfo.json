@@ -1,0 +1,26 @@
+{
+  "generationParameters": {
+    "generationDate": "Tue Jul 22 2025 13:33:34 GMT+0000 (Coordinated Universal Time)",
+    "generatorPlatform": "SAP Business Application Studio",
+    "serviceType": "Local CAP",
+    "metadataFilename": "",
+    "serviceUrl": "http://localhost:4004/service/pdfdocumentreaderService/",
+    "appName": "pdfdocumentreader.pdfreader",
+    "appTitle": "Pdf Reader",
+    "appDescription": "My SAP application",
+    "appNamespace": "",
+    "ui5Theme": "sap_horizon",
+    "ui5Version": "1.120.13",
+    "showMockDataInfo": false,
+    "generatorVersion": "1.18.3",
+    "template": "List Report Page V4",
+    "generatorName": "SAP Fiori Application Generator",
+    "entityRelatedConfig": [
+      {
+        "type": "Main Entity",
+        "value": "document"
+      }
+    ],
+    "launchText": "To launch the generated app, start your CAP project:  and navigate to the following location in your browser:\n\nhttp://localhost:4004/pdfdocumentreader.pdfreader/webapp/index.html"
+  }
+}
