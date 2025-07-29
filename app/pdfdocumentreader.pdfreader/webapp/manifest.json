@@ -73,7 +73,9 @@
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
         "settings": {
-          "bundleName": "pdfdocumentreader.pdfreader.i18n.i18n"
+          "bundleName": "pdfdocumentreader.pdfreader.i18n.i18n",
+          "supportedLocales": ["pt-BR", "en"],
+          "fallbackLocale": "pt-BR"
         }
       },
       "": {
@@ -134,7 +136,7 @@
                       "visible": true,
                       "enabled": true,
                       "requiresSelection": false,
-                      "text": "Ler PDF"
+                      "text": "{{selecionarPdf}}"
                     }
                   }
                 }

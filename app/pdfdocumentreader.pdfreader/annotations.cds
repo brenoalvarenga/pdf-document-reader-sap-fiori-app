@@ -5,12 +5,12 @@ annotate service.document with @(
         Data : [
             {
                 $Type : 'UI.DataField',
-                Label : 'Número do booking',
+                Label : '{@i18n>numeroBooking}',
                 Value : numeroBooking,
             },
             {
                 $Type : 'UI.DataField',
-                Label : 'Peso',
+                Label : '{@i18n>peso}',
                 Value : peso,
             },
         ],
@@ -19,19 +19,19 @@ annotate service.document with @(
         {
             $Type : 'UI.ReferenceFacet',
             ID : 'GeneratedFacet1',
-            Label : 'General Information',
+            Label : '{@i18n>informacoesGerais}',
             Target : '@UI.FieldGroup#GeneratedGroup',
         },
     ],
     UI.LineItem : [
         {
             $Type : 'UI.DataField',
-            Label : 'Número do booking',
+            Label : '{@i18n>numeroBooking}',
             Value : numeroBooking,
         },
         {
             $Type : 'UI.DataField',
-            Label : 'Peso',
+            Label : '{@i18n>peso}',
             Value : peso,
         },
     ],
