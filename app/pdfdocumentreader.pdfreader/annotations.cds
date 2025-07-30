@@ -10,8 +10,13 @@ annotate service.document with @(
             },
             {
                 $Type : 'UI.DataField',
-                Label : '{@i18n>peso}',
-                Value : peso,
+                Label : '{@i18n>qtdContainer}',
+                Value : qtdContainer,
+            },
+            {
+                $Type : 'UI.DataField',
+                Label : '{@i18n>navio}',
+                Value : navio,
             },
         ],
     },
@@ -31,8 +36,13 @@ annotate service.document with @(
         },
         {
             $Type : 'UI.DataField',
-            Label : '{@i18n>peso}',
-            Value : peso,
+            Label : '{@i18n>qtdContainer}',
+            Value : qtdContainer,
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : '{@i18n>navio}',
+            Value : navio,
         },
     ],
     UI.HeaderFacets : [
