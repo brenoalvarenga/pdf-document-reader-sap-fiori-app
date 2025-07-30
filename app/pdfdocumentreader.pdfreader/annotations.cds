@@ -18,6 +18,16 @@ annotate service.document with @(
                 Label : '{@i18n>navio}',
                 Value : navio,
             },
+            {
+                $Type : 'UI.DataField',
+                Label : '{@i18n>viagem}',
+                Value : viagem,
+            },
+            {
+                $Type : 'UI.DataField',
+                Label : '{@i18n>armador}',
+                Value : armador,
+            },
         ],
     },
     UI.Facets : [
@@ -44,6 +54,17 @@ annotate service.document with @(
             Label : '{@i18n>navio}',
             Value : navio,
         },
+        {
+            $Type : 'UI.DataField',
+            Label : '{@i18n>viagem}',
+            Value : viagem,
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : '{@i18n>armador}',
+            Value : armador,
+        },
+        
     ],
     UI.HeaderFacets : [
         

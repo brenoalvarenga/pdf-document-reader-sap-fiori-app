@@ -6,4 +6,6 @@ entity document
     numeroBooking : String;
     qtdContainer : String;
     navio : String;
+    viagem : String;
+    armador : String;
 }
