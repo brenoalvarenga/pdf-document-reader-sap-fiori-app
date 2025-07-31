@@ -28,6 +28,21 @@ annotate service.document with @(
                 Label : '{@i18n>armador}',
                 Value : armador,
             },
+            {
+                $Type : 'UI.DataField',
+                Label : '{@i18n>portoOrigem}',
+                Value : portoOrigem,
+            },
+            {
+                $Type : 'UI.DataField',
+                Label : '{@i18n>portoDestino}',
+                Value : portoDestino,
+            },
+            {
+                $Type : 'UI.DataField',
+                Label : '{@i18n>destinoFinal}',
+                Value : destinoFinal,
+            },
         ],
     },
     UI.Facets : [
@@ -63,6 +78,21 @@ annotate service.document with @(
             $Type : 'UI.DataField',
             Label : '{@i18n>armador}',
             Value : armador,
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : '{@i18n>portoOrigem}',
+            Value : portoOrigem,
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : '{@i18n>portoDestino}',
+            Value : portoDestino,
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : '{@i18n>destinoFinal}',
+            Value : destinoFinal,
         },
         
     ],

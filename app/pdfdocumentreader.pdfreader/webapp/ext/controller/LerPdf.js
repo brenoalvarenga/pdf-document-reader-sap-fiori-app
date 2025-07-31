@@ -52,11 +52,9 @@ sap.ui.define([
 
                             console.log(`Texto extraído de ${file.name}:\n`, fullText);
 
-                            // Número do Booking
                             const match = fullText.match(/B\s*o+\s*k+\s*i+\s*n+\s*g(?:\s*(?:No(?:\s*\.)?|Number))?\s*[:\-]?\s*(\w{3,}\d{6,})/i);
                             const numeroBooking = match?.[1];
 
-                            // Quantidade de containers
                             const qtdPatterns = [
                                 /TOTAL.*?(?:QTY|QUANTITY).*?:\s*(\d{1,3})\s*x/i,
                                 /(\d{1,3})\s*x\s*40\s*(?:'|ft)?\s*(?:HI|HIGH|DRY|CUBE|CONTAINER|DR)/i,
@@ -67,18 +65,14 @@ sap.ui.define([
                             ];
                             const qtdContainer = qtdPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean);
 
-                            // Nome do navio (com normalização de espaços)
                             const navioPatterns = [
                                 /VESSEL\/VOYAGE\s*:\s*([A-Z\s]{3,})\s+[A-Z0-9]{5,}/i,
                                 /NAVIO\s+E\s+VIAGEM\s+((?:[A-Z]{2,}\s+){1,3})[A-Z0-9]{5,}/i,
                                 /Trunk\s+Vessel\s*:\s*([A-Z\s]{3,})\s+[A-Z0-9]{5,}/i,
                                 /reservados\s+no\s+navio\s+([A-Z\s]{3,})\s*\/[A-Z0-9]{3,}/i
                             ];
-                            const navio = navioPatterns
-                                .map(rx => fullText.match(rx)?.[1])
-                                .find(Boolean)?.replace(/\s+/g, ' ').trim();
+                            const navio = navioPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean)?.replace(/\s+/g, ' ').trim();
 
-                            // Código da viagem
                             const viagemPatterns = [
                                 /INTENDED\s+VESSEL\/VOYAGE\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{5,})/i,
                                 /1st\s+VESSEL\/VOYAGE\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{5,})/i,
@@ -86,28 +80,62 @@ sap.ui.define([
                                 /NAVIO\s+E\s+VIAGEM\s+(?:[A-Z]{2,}\s+){1,3}([A-Z0-9]{5,})/i,
                                 /\/([A-Z0-9]{3,})\./i
                             ];
-                            const viagem = viagemPatterns.map(rx => fullText.match(rx)?.[1]?.trim()).find(Boolean);
 
-                            // Armador
-                            const armadores = [
-                                "MEDITERRANEAN SHIPPING COMPANY",
-                                "PIL",
-                                "MAERSK",
-                                "HMM",
-                                "COSCO"
-                            ];
+                            const viagem = viagemPatterns
+                                .map(rx => fullText.match(rx)?.[1]?.trim())
+                                .find(Boolean)
+                                ?.replace(/\(.*?\)$/, '')  // Remove conteúdo entre parênteses no final
+                                .trim();
 
+                            const armadores = ["MEDITERRANEAN SHIPPING COMPANY", "PIL", "MAERSK", "HMM", "COSCO"];
                             const armadorRegex = new RegExp(`\\b(${armadores.map(a => a.replace(/ /g, "\\s+")).join("|")})\\b`, "i");
                             let armadorMatch = fullText.match(armadorRegex);
                             let armador = null;
-
                             if (armadorMatch) {
                                 const found = armadorMatch[0].toUpperCase().replace(/\s+/g, " ").trim();
                                 armador = armadores.find(a => found.includes(a));
                             }
 
-                            if (numeroBooking && qtdContainer && navio && armador && viagem) {
-                                console.log(`✅ [${file.name}] Booking: ${numeroBooking}, Qtde: ${qtdContainer}, Navio: ${navio}, Viagem: ${viagem}, Armador: ${armador}`);
+                            const portoPatterns = [
+                                /PORTO\s+DE\s+EMBARQUE\s+([A-Z]{2,})/i,
+                                /PORT\s+OF\s+LOADING\s*:\s*([A-Z][a-z]+)(?:\s*\/|\s*,|\s)/i,
+                                /Port\s+of\s+Loading\s*:\s*([A-Z][a-z]+)(?:,|\s|$)/i,
+                                /From:\s*([A-Z][a-z]+)/i
+                            ];
+                            const portoOrigem = portoPatterns.map(rx => fullText.match(rx)?.[1]?.toUpperCase()).find(Boolean);
+
+                            const destinoPatterns = [
+                                /porto\s+de\s+destino\s*:\s*([A-Z\s,]+?)\s+SUZANO/i,
+                                /FINAL\s+DESTINATION\s*:\s*([A-Z\s,]{3,})/i,
+                                /Place\s+of\s+Delivery\s*:\s*([A-Z\s,]{3,})/i,
+                                /To:\s*([A-Z\s,]{3,})/i,
+                                /destino\s*:\s*([A-Z\s,]{3,})/i
+                            ];
+                            let destinoFinal = destinoPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean);
+                            if (destinoFinal) {
+                                destinoFinal = destinoFinal.split(',')[0].replace(/\s+/g, ' ').trim().toUpperCase()
+                                    .replace(/\b([A-Z])\s+([A-Z]{2,5})\b/g, '$1$2')
+                                    .replace(/\b([A-Z]{1,2})\s+([A-Z]{1,3})\b/g, (match, p1, p2) => (p1 + p2).length <= 6 ? p1 + p2 : match)
+                                    .split(' ').slice(0, 2).join(' ');
+                            }
+
+                            const portoDestinoPatterns = [
+                                /PORTO\s+DE\s+DESCARGA\s*[:\-]?\s*([A-Z\s,]+)/i,
+                                /PORT\s+OF\s+DISCHARGE\s*[:\-]?\s*([A-Z\s,]+)/i,
+                                /PORTO\s+DESTINO\s*[:\-]?\s*([A-Z\s,]+)/i,
+                                /Port\s+of\s+Discharging\s*[:\-]?\s*([A-Z\s,]+)/i,
+                                /To:\s*([A-Z\s,]{3,})/i,
+                            ];
+                            let portoDestino = portoDestinoPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean);
+                            if (portoDestino) {
+                                portoDestino = portoDestino.split(',')[0].replace(/\s+/g, ' ').trim().toUpperCase()
+                                    .replace(/\b([A-Z])\s+([A-Z]{2,5})\b/g, '$1$2')
+                                    .replace(/\b([A-Z]{1,2})\s+([A-Z]{1,3})\b/g, (match, p1, p2) => (p1 + p2).length <= 6 ? p1 + p2 : match)
+                                    .split(' ').slice(0, 2).join(' ');
+                            }
+
+                            if (numeroBooking && qtdContainer && navio && armador && viagem && portoOrigem && destinoFinal) {
+                                console.log(`✅ [${file.name}] Booking: ${numeroBooking}, Qtde: ${qtdContainer}, Navio: ${navio}, Viagem: ${viagem}, Armador: ${armador}, Porto: ${portoOrigem}, Destino: ${destinoFinal}, Descarga: ${portoDestino}`);
 
                                 try {
                                     const response = await fetch("/service/pdfdocumentreaderService/document", {
@@ -115,7 +143,7 @@ sap.ui.define([
                                         headers: {
                                             "Content-Type": "application/json"
                                         },
-                                        body: JSON.stringify({ numeroBooking, qtdContainer, navio, viagem, armador })
+                                        body: JSON.stringify({ numeroBooking, qtdContainer, navio, viagem, armador, portoOrigem, destinoFinal, portoDestino })
                                     });
 
                                     if (!response.ok) {
