@@ -52,7 +52,11 @@ sap.ui.define([
 
                             console.log(`Texto extraído de ${file.name}:\n`, fullText);
 
-                            const match = fullText.match(/B\s*o+\s*k+\s*i+\s*n+\s*g(?:\s*(?:No(?:\s*\.)?|Number))?\s*[:\-]?\s*(\w{3,}\d{6,})/i);
+                            const match =
+                                fullText.match(/Booking\s+Ref\.?\s*[:\-]?\s*(\w{3,}\d{6,})/i) ||
+                                fullText.match(/Nossa\s+Refer[êe]ncia\s*[:\-]?\s*(\d{6,})/i) ||
+                                fullText.match(/B\s*o+\s*k+\s*i+\s*n+\s*g(?:\s*(?:No(?:\s*\.)?|Number))?\s*[:\-]?\s*(\w{3,}\d{6,})/i);
+
                             const numeroBooking = match?.[1];
 
                             const qtdPatterns = [
@@ -61,7 +65,11 @@ sap.ui.define([
                                 /(\d{1,3})\s+40\s*(?:'|ft)?\s*(?:HI|HIGH|DRY|CUBE|CONTAINER|DR)/i,
                                 /Qty\/Kind.*?(\d{1,3})\s+40/i,
                                 /Equipment\s+Type\/Q[’']ty\s*:\s*\w+-\s*(\d{1,3})/i,
-                                /Equipment\s+Qty\s*:\s*(\d{1,3})/i
+                                /Equipment\s+Qty\s*:\s*(\d{1,3})/i,
+                                /Quantity:\s*(?:.*?[-–])?\s*(\d{1,3})\s*x\s*40(?:'|ft)?/i,
+                                /(\d{1,3})\s*\/\s*\d{2}(?:'|ft)?\s*(HI[-\s]?CUBE|DRY|REEFER|TANK|OPEN\s*TOP|FLAT\s*RACK|CONTAINER|HC|GP)/i,
+                                /\bResumo\s*:\s*(\d+)\s*x\s*\d{2,3}\s*[A-Z]{2,}/i
+
                             ];
                             const qtdContainer = qtdPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean);
 
@@ -69,25 +77,32 @@ sap.ui.define([
                                 /VESSEL\/VOYAGE\s*:\s*([A-Z\s]{3,})\s+[A-Z0-9]{5,}/i,
                                 /NAVIO\s+E\s+VIAGEM\s+((?:[A-Z]{2,}\s+){1,3})[A-Z0-9]{5,}/i,
                                 /Trunk\s+Vessel\s*:\s*([A-Z\s]{3,})\s+[A-Z0-9]{5,}/i,
-                                /reservados\s+no\s+navio\s+([A-Z\s]{3,})\s*\/[A-Z0-9]{3,}/i
+                                /reservados\s+no\s+navio\s+([A-Z\s]{3,})\s*\/[A-Z0-9]{3,}/i,
+                                /[A-Z]{2,}\s+Agencia Maritima Ltda\s+([A-Z\s]+)\s*\/\s*[A-Z0-9]+/i,
+                                /NAVIO\/VIAGEM\s*:\s*((?:[A-Z]{2,}(?:\s+|$)){1,4})\s+[A-Z0-9\-]{5,}/i,
+                                /Vessel\s+([A-Z\s]+?)\s+DP\s+Voyage:/i
                             ];
-                            const navio = navioPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean)?.replace(/\s+/g, ' ').trim();
+                            const navio = navioPatterns
+                                .map(rx => fullText.match(rx)?.[1])
+                                .find(Boolean)
+                                ?.replace(/\s+\/.*/, '')           // remove tudo após a barra, inclusive
+                                ?.replace(/\s+/g, ' ')             // normaliza espaços
+                                .trim();
 
                             const viagemPatterns = [
+                                /NAVIO\/VIAGEM\s*:\s*(?:[A-Z]+\s+)+([A-Z0-9\-]{5,})/i,
+                                /NAVIO\s+E\s+VIAGEM\s+(?:[A-Z]{2,}\s+){1,3}([A-Z0-9]{5,})/i,
+                                /Voyage\s+([A-Z0-9\-]{5,})\s+Vessel/i,
+                                /Voy\.\s*No:\s*([A-Z0-9\-]{4,})/i,         // <-- novo caso
                                 /INTENDED\s+VESSEL\/VOYAGE\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{5,})/i,
                                 /1st\s+VESSEL\/VOYAGE\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{5,})/i,
                                 /Trunk\s+Vessel\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{5,})/i,
-                                /NAVIO\s+E\s+VIAGEM\s+(?:[A-Z]{2,}\s+){1,3}([A-Z0-9]{5,})/i,
+                                /Voyage\s+([A-Z0-9]{5,})/i,
                                 /\/([A-Z0-9]{3,})\./i
                             ];
+                            const viagem = viagemPatterns.map(rx => fullText.match(rx)?.[1]?.trim()).find(Boolean)?.replace(/\(.*?\)$/, '').trim();
 
-                            const viagem = viagemPatterns
-                                .map(rx => fullText.match(rx)?.[1]?.trim())
-                                .find(Boolean)
-                                ?.replace(/\(.*?\)$/, '')  // Remove conteúdo entre parênteses no final
-                                .trim();
-
-                            const armadores = ["MEDITERRANEAN SHIPPING COMPANY", "PIL", "MAERSK", "HMM", "COSCO"];
+                            const armadores = ["MEDITERRANEAN SHIPPING COMPANY", "PIL", "MAERSK", "HMM", "COSCO", "EVERGREEN", "HAPAG-LLOYD", "CMA CGM"];
                             const armadorRegex = new RegExp(`\\b(${armadores.map(a => a.replace(/ /g, "\\s+")).join("|")})\\b`, "i");
                             let armadorMatch = fullText.match(armadorRegex);
                             let armador = null;
@@ -97,10 +112,13 @@ sap.ui.define([
                             }
 
                             const portoPatterns = [
+                                /(?:^|[^,])\s+([A-Z][A-Z\s]{1,20}?)\s+Port\s+Of\s+Loading:/i,
+                                /PORTO\s+ORIGEM\s*:\s*([A-Z\s]+),/i,
                                 /PORTO\s+DE\s+EMBARQUE\s+([A-Z]{2,})/i,
                                 /PORT\s+OF\s+LOADING\s*:\s*([A-Z][a-z]+)(?:\s*\/|\s*,|\s)/i,
                                 /Port\s+of\s+Loading\s*:\s*([A-Z][a-z]+)(?:,|\s|$)/i,
-                                /From:\s*([A-Z][a-z]+)/i
+                                /From:\s*([A-Z][a-z]+)/i,
+                                /Data\s+est\.\s+de\s+chegada\s+([A-Z]+)/i
                             ];
                             const portoOrigem = portoPatterns.map(rx => fullText.match(rx)?.[1]?.toUpperCase()).find(Boolean);
 
@@ -120,12 +138,18 @@ sap.ui.define([
                             }
 
                             const portoDestinoPatterns = [
+                                // Novo padrão para capturar porto de destino em tabelas desformatadas
+                                // Procura por: PORTO1 (CODE1) PORTO2 (CODE2) - captura PORTO2
+                                /\([A-Z]{5,6}\)\s+([A-Z][A-Z\s,]+?),?\s+[A-Z]{2}\s+\([A-Z]{5,6}\)/i,
+                                
+                                // Padrões existentes
                                 /PORTO\s+DE\s+DESCARGA\s*[:\-]?\s*([A-Z\s,]+)/i,
                                 /PORT\s+OF\s+DISCHARGE\s*[:\-]?\s*([A-Z\s,]+)/i,
                                 /PORTO\s+DESTINO\s*[:\-]?\s*([A-Z\s,]+)/i,
                                 /Port\s+of\s+Discharging\s*[:\-]?\s*([A-Z\s,]+)/i,
-                                /To:\s*([A-Z\s,]{3,})/i,
+                                /To:\s*([A-Z\s,]{3,})/i
                             ];
+                            
                             let portoDestino = portoDestinoPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean);
                             if (portoDestino) {
                                 portoDestino = portoDestino.split(',')[0].replace(/\s+/g, ' ').trim().toUpperCase()
@@ -134,32 +158,36 @@ sap.ui.define([
                                     .split(' ').slice(0, 2).join(' ');
                             }
 
-                            if (numeroBooking && qtdContainer && navio && armador && viagem && portoOrigem && destinoFinal) {
-                                console.log(`✅ [${file.name}] Booking: ${numeroBooking}, Qtde: ${qtdContainer}, Navio: ${navio}, Viagem: ${viagem}, Armador: ${armador}, Porto: ${portoOrigem}, Destino: ${destinoFinal}, Descarga: ${portoDestino}`);
+                            console.log(`📦 [${file.name}] Enviando mesmo com possíveis campos incompletos.`);
 
-                                try {
-                                    const response = await fetch("/service/pdfdocumentreaderService/document", {
-                                        method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json"
-                                        },
-                                        body: JSON.stringify({ numeroBooking, qtdContainer, navio, viagem, armador, portoOrigem, destinoFinal, portoDestino })
-                                    });
+                            try {
+                                const response = await fetch("/service/pdfdocumentreaderService/document", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify({
+                                        numeroBooking: numeroBooking || null,
+                                        qtdContainer: qtdContainer || null,
+                                        navio: navio || null,
+                                        viagem: viagem || null,
+                                        armador: armador || null,
+                                        portoOrigem: portoOrigem || null,
+                                        destinoFinal: destinoFinal || null,
+                                        portoDestino: portoDestino || null
+                                    })
+                                });
 
-                                    if (!response.ok) {
-                                        throw new Error(`Erro na resposta ao enviar ${file.name}`);
-                                    }
-
-                                    const data = await response.json();
-                                    console.log(`📤 [${file.name}] Dados enviados com sucesso:`, data);
-                                    resolve();
-                                } catch (sendError) {
-                                    console.error(`❌ [${file.name}] Erro ao enviar dados:`, sendError);
-                                    reject(sendError);
+                                if (!response.ok) {
+                                    throw new Error(`Erro na resposta ao enviar ${file.name}`);
                                 }
-                            } else {
-                                console.warn(`⚠️ [${file.name}] Dados incompletos.`);
+
+                                const data = await response.json();
+                                console.log(`📤 [${file.name}] Dados enviados com sucesso:`, data);
                                 resolve();
+                            } catch (sendError) {
+                                console.error(`❌ [${file.name}] Erro ao enviar dados:`, sendError);
+                                reject(sendError);
                             }
                         } catch (err) {
                             console.error(`❌ [${file.name}] Erro ao processar PDF:`, err);
