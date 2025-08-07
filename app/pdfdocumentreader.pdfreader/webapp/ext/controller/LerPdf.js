@@ -53,6 +53,7 @@ sap.ui.define([
                             console.log(`Texto extraído de ${file.name}:\n`, fullText);
 
                             const match =
+                                fullText.match(/(\b\w{3,}\d{6,})\s+Booking\s+Number\b/i) ||
                                 fullText.match(/Booking\s+Ref\.?\s*[:\-]?\s*(\w{3,}\d{6,})/i) ||
                                 fullText.match(/Nossa\s+Refer[êe]ncia\s*[:\-]?\s*(\d{6,})/i) ||
                                 fullText.match(/B\s*o+\s*k+\s*i+\s*n+\s*g(?:\s*(?:No(?:\s*\.)?|Number))?\s*[:\-]?\s*(\w{3,}\d{6,})/i);
@@ -60,6 +61,7 @@ sap.ui.define([
                             const numeroBooking = match?.[1];
 
                             const qtdPatterns = [
+                                /(\d{1,3})\s*x\s*40\s*(?:'|ft)?\s*HC\b/i,
                                 /TOTAL.*?(?:QTY|QUANTITY).*?:\s*(\d{1,3})\s*x/i,
                                 /(\d{1,3})\s*x\s*40\s*(?:'|ft)?\s*(?:HI|HIGH|DRY|CUBE|CONTAINER|DR)/i,
                                 /(\d{1,3})\s+40\s*(?:'|ft)?\s*(?:HI|HIGH|DRY|CUBE|CONTAINER|DR)/i,
@@ -74,35 +76,42 @@ sap.ui.define([
                             const qtdContainer = qtdPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean);
 
                             const navioPatterns = [
-                                /VESSEL\/VOYAGE\s*:\s*([A-Z\s]{3,})\s+[A-Z0-9]{5,}/i,
-                                /NAVIO\s+E\s+VIAGEM\s+((?:[A-Z]{2,}\s+){1,3})[A-Z0-9]{5,}/i,
-                                /Trunk\s+Vessel\s*:\s*([A-Z\s]{3,})\s+[A-Z0-9]{5,}/i,
+                                /ETD:\s+([A-Z]{2,}(?:\s+[A-Z]{2,}){1,5})\s*\/\s*[A-Z0-9]{3,}/i,
+                                /VESSEL\/VOYAGE\s*:\s*([A-Z\s]{3,})\s+[A-Z0-9]{3,}/i,                          // ajustado: {3,} em vez de {5,}
+                                /NAVIO\s+E\s+VIAGEM\s+((?:[A-Z]{2,}\s+){1,3})[A-Z0-9]{3,}/i,                  // ajustado: {3,} em vez de {5,}
+                                /Trunk\s+Vessel\s*:\s*([A-Z\s]{3,})\s+[A-Z0-9]{3,}/i,                         // ajustado: {3,} em vez de {5,}
                                 /reservados\s+no\s+navio\s+([A-Z\s]{3,})\s*\/[A-Z0-9]{3,}/i,
                                 /[A-Z]{2,}\s+Agencia Maritima Ltda\s+([A-Z\s]+)\s*\/\s*[A-Z0-9]+/i,
-                                /NAVIO\/VIAGEM\s*:\s*((?:[A-Z]{2,}(?:\s+|$)){1,4})\s+[A-Z0-9\-]{5,}/i,
-                                /Vessel\s+([A-Z\s]+?)\s+DP\s+Voyage:/i
+                                /NAVIO\/VIAGEM\s*:\s*((?:[A-Z]{2,}(?:\s+|$)){1,4})\s+[A-Z0-9\-]{3,}/i,        // ajustado: {3,} em vez de {5,}
+                                /Vessel\s+([A-Z\s]+?)\s+DP\s+Voyage:/i,
+                                /MVS\s+([A-Z\s]+?)\(SG\)/i,
+                                /MVS\s+([A-Z\s]{2,})\s+\d{3}[A-Z]\b/i
                             ];
+                            
                             const navio = navioPatterns
                                 .map(rx => fullText.match(rx)?.[1])
                                 .find(Boolean)
                                 ?.replace(/\s+\/.*/, '')           // remove tudo após a barra, inclusive
                                 ?.replace(/\s+/g, ' ')             // normaliza espaços
                                 .trim();
-
+                            
                             const viagemPatterns = [
-                                /NAVIO\/VIAGEM\s*:\s*(?:[A-Z]+\s+)+([A-Z0-9\-]{5,})/i,
-                                /NAVIO\s+E\s+VIAGEM\s+(?:[A-Z]{2,}\s+){1,3}([A-Z0-9]{5,})/i,
-                                /Voyage\s+([A-Z0-9\-]{5,})\s+Vessel/i,
-                                /Voy\.\s*No:\s*([A-Z0-9\-]{4,})/i,         // <-- novo caso
-                                /INTENDED\s+VESSEL\/VOYAGE\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{5,})/i,
-                                /1st\s+VESSEL\/VOYAGE\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{5,})/i,
-                                /Trunk\s+Vessel\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{5,})/i,
-                                /Voyage\s+([A-Z0-9]{5,})/i,
-                                /\/([A-Z0-9]{3,})\./i
+                                /ETD:\s+[A-Z\s]+\s*\/\s*([A-Z0-9]{5,})/i,
+                                /NAVIO\/VIAGEM\s*:\s*(?:[A-Z]+\s+)+([A-Z0-9\-]{3,})/i,                        // ajustado: {3,} em vez de {5,}
+                                /NAVIO\s+E\s+VIAGEM\s+(?:[A-Z]{2,}\s+){1,3}([A-Z0-9]{3,})/i,                 // ajustado: {3,} em vez de {5,}
+                                /Voyage\s+([A-Z0-9\-]{3,})\s+Vessel/i,                                        // ajustado: {3,} em vez de {5,}
+                                /Voy\.\s*No:\s*([A-Z0-9\-]{3,})/i,                                            // ajustado: {3,} em vez de {4,}
+                                /INTENDED\s+VESSEL\/VOYAGE\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{3,})/i,          // ajustado: {3,} em vez de {5,}
+                                /1st\s+VESSEL\/VOYAGE\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{3,})/i,               // ajustado: {3,} em vez de {5,}
+                                /Trunk\s+Vessel\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{3,})/i,                     // ajustado: {3,} em vez de {5,}
+                                /Voyage\s+([A-Z0-9]{3,})/i,
+                                /[A-Z]{2,}(?:\s+[A-Z]{2,}){1,6}\s+(?:\([A-Z]{2,}\)\s+)?([A-Z0-9]{3,})\s+\d{4}-\d{2}-\d{2}/,
+                                /\b(\d{3}[A-Z])\b/
                             ];
+                            
                             const viagem = viagemPatterns.map(rx => fullText.match(rx)?.[1]?.trim()).find(Boolean)?.replace(/\(.*?\)$/, '').trim();
-
-                            const armadores = ["MEDITERRANEAN SHIPPING COMPANY", "PIL", "MAERSK", "HMM", "COSCO", "EVERGREEN", "HAPAG-LLOYD", "CMA CGM"];
+                            
+                            const armadores = ["MEDITERRANEAN SHIPPING COMPANY", "PIL", "MAERSK", "HMM", "COSCO", "EVERGREEN", "HAPAG-LLOYD", "CMA CGM", "GRIMALDI"];
                             const armadorRegex = new RegExp(`\\b(${armadores.map(a => a.replace(/ /g, "\\s+")).join("|")})\\b`, "i");
                             let armadorMatch = fullText.match(armadorRegex);
                             let armador = null;
@@ -112,6 +121,7 @@ sap.ui.define([
                             }
 
                             const portoPatterns = [
+                                /\bSSZ\d{6,}\b\s+([A-Z]{2,})\b/,
                                 /(?:^|[^,])\s+([A-Z][A-Z\s]{1,20}?)\s+Port\s+Of\s+Loading:/i,
                                 /PORTO\s+ORIGEM\s*:\s*([A-Z\s]+),/i,
                                 /PORTO\s+DE\s+EMBARQUE\s+([A-Z]{2,})/i,
@@ -122,41 +132,162 @@ sap.ui.define([
                             ];
                             const portoOrigem = portoPatterns.map(rx => fullText.match(rx)?.[1]?.toUpperCase()).find(Boolean);
 
-                            const destinoPatterns = [
+                            function normalizeCityName(raw) {
+                                return raw
+                                  .split(',')[0]                                   // Pega apenas antes da vírgula
+                                  .replace(/[,\s]+/g, ' ')                         // Normaliza múltiplos espaços e vírgulas
+                                  .replace(/\b([A-Z])\s+(?=[A-Z]\b)/g, '$1')        // Junta letras isoladas (ex: "B a l" → "Bal")
+                                  .replace(/([A-Z])\s+(?=[a-z])/g, '$1')            // Junta maiúscula com minúscula (ex: "Tim or" → "Timor")
+                                  .replace(/([a-z])\s+(?=[a-z])/g, '$1')            // Junta minúsculas separadas (ex: "vi l le" → "ville")
+                                  .replace(/\s{2,}/g, ' ')                          // Remove espaços duplos
+                                  .trim()
+                                  .split(' ')                                       // Limita a no máximo duas palavras
+                                  .slice(0, 2)
+                                  .join(' ')
+                                  .toUpperCase();                                   // Converte para MAIÚSCULAS
+                              }
+                              
+                              const destinoPatterns = [
+                                /\b\w{3,}\d{6,}\b(?:\s+[A-Z]{2,})+\s+([A-Z]{2,})\s+\d{2}-[A-Z]{3}-\d{2}/,
+                                /\bPort\s+Of\s+Discharge:\s*([A-Z\s]+?)(?=,\s+[A-Z]{2,3}\s+Final\s+Place\s+Of\s+Delivery)/i,
+                                /DESTINO\s+FINAL\s*:\s*([A-Z][A-Z\s]+?)(?=\s*[-,])/i,
+                              
+                                // NOVA REGRA: Captura destino final de estruturas de tabela "De Para Por"
+                                /De\s+Para\s+Por[\s\S]*?\([A-Z]{5,6}\)\s+([A-Z]+(?:\s+[A-Z]+)*?)(?:\s+[A-Z\s]*?\s+\([A-Z]{5,6}\))/i,
+                              
+                                /\([A-Z]{5,6}\)\s+([A-Z][A-Z\s,]+?),?\s+[A-Z]{2}\s+\([A-Z]{5,6}\)/gi,
                                 /porto\s+de\s+destino\s*:\s*([A-Z\s,]+?)\s+SUZANO/i,
                                 /FINAL\s+DESTINATION\s*:\s*([A-Z\s,]{3,})/i,
                                 /Place\s+of\s+Delivery\s*:\s*([A-Z\s,]{3,})/i,
                                 /To:\s*([A-Z\s,]{3,})/i,
                                 /destino\s*:\s*([A-Z\s,]{3,})/i
-                            ];
-                            let destinoFinal = destinoPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean);
-                            if (destinoFinal) {
-                                destinoFinal = destinoFinal.split(',')[0].replace(/\s+/g, ' ').trim().toUpperCase()
-                                    .replace(/\b([A-Z])\s+([A-Z]{2,5})\b/g, '$1$2')
-                                    .replace(/\b([A-Z]{1,2})\s+([A-Z]{1,3})\b/g, (match, p1, p2) => (p1 + p2).length <= 6 ? p1 + p2 : match)
-                                    .split(' ').slice(0, 2).join(' ');
-                            }
-
-                            const portoDestinoPatterns = [
-                                // Novo padrão para capturar porto de destino em tabelas desformatadas
-                                // Procura por: PORTO1 (CODE1) PORTO2 (CODE2) - captura PORTO2
-                                /\([A-Z]{5,6}\)\s+([A-Z][A-Z\s,]+?),?\s+[A-Z]{2}\s+\([A-Z]{5,6}\)/i,
-                                
-                                // Padrões existentes
+                              ];
+                              
+                              let destinoFinal = null;
+                              
+                              // Processa cada padrão em ordem de prioridade
+                              for (let i = 0; i < destinoPatterns.length; i++) {
+                                const rx = destinoPatterns[i];
+                              
+                                if (rx.global) {
+                                  // Para o padrão global, pega todas as ocorrências e retorna a última
+                                  const matches = [...fullText.matchAll(rx)];
+                                  if (matches.length > 0) {
+                                    destinoFinal = normalizeCityName(matches[matches.length - 1][1]);
+                                    break;
+                                  }
+                                } else {
+                                  const match = fullText.match(rx);
+                                  if (match && match[1]) {
+                                    destinoFinal = normalizeCityName(match[1]);
+                                    break;
+                                  }
+                                }
+                              }
+                              
+                              const portoDestinoPatterns = [
+                                /\b\w{3,}\d{6,}\b(?:\s+[A-Z]{2,})+\s+([A-Z]{2,})\s+\d{2}-[A-Z]{3}-\d{2}/,
+                                /(?<!,\s*)([A-Z][A-Z\s]{1,20}?)\s+ETA:\s+Port\s+Of\s+Discharge:/i,
+                              
+                                // NOVA REGRA: Captura porto de estruturas de tabela "De Para Por"
+                                /De\s+Para\s+Por[\s\S]*?\([A-Z]{5,6}\)\s+([A-Z]+(?:\s+[A-Z]+)*?)(?:\s+[A-Z\s]*?\s+\([A-Z]{5,6}\))/i,
+                              
+                                /\([A-Z]{5,6}\)\s+([A-Z][A-Z\s,]+?),?\s+[A-Z]{2}\s+\([A-Z]{5,6}\)/gi,
+                              
                                 /PORTO\s+DE\s+DESCARGA\s*[:\-]?\s*([A-Z\s,]+)/i,
                                 /PORT\s+OF\s+DISCHARGE\s*[:\-]?\s*([A-Z\s,]+)/i,
                                 /PORTO\s+DESTINO\s*[:\-]?\s*([A-Z\s,]+)/i,
                                 /Port\s+of\s+Discharging\s*[:\-]?\s*([A-Z\s,]+)/i,
                                 /To:\s*([A-Z\s,]{3,})/i
+                              ];
+                              
+                              let portoDestino = null;
+                              
+                              // Processa cada padrão em ordem de prioridade
+                              for (let i = 0; i < portoDestinoPatterns.length; i++) {
+                                const rx = portoDestinoPatterns[i];
+                              
+                                if (rx.global) {
+                                  const matches = [...fullText.matchAll(rx)];
+                                  if (matches.length > 0) {
+                                    portoDestino = normalizeCityName(matches[matches.length - 1][1]);
+                                    break;
+                                  }
+                                } else {
+                                  const match = fullText.match(rx);
+                                  if (match && match[1]) {
+                                    portoDestino = normalizeCityName(match[1]);
+                                    break;
+                                  }
+                                }
+                              }
+                              
+
+                            let etdMatch =
+                                fullText.match(/[A-Z]{2,}(?:\s+[A-Z]{2,}){1,}\s+(\d{2}-[A-Z]{3}-\d{4})/i) ||
+                                fullText.match(/(\d{2}-[A-Z]{3}-\d{4})\s+\d{2}:\d{2}\s+ETD:/i) ||
+                                fullText.match(/Flag:\s*[A-Z\s()]+\s+(\d{2}-[A-Z]{3}-\d{4})/i) ||
+                                fullText.match(/Flag:\s+\w+\s+(\d{1,2}-[A-Z]{3}-\d{4})\s+\d{2}:\d{2}\s+\d{1,2}-[A-Z]{3}-\d{4}/i) ||
+                                fullText.match(/ETD\s*:\s*(\d{4}\/\d{2}\/\d{2})/i) ||
+                                fullText.match(/ETA\/ETD\s*:\s*\d{2}[A-Z]{3}\d{2}\/(\d{2}[A-Z]{3}\d{2})/i) ||
+                                fullText.match(/ETD\s*[:\-]?\s*(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i);
+
+                            let etd = etdMatch?.[1] || null;
+
+                            // Fallback: se ainda não achou, usa a lógica pós-viagem
+                            if (!etd) {
+                                const viagemRegex = /\b\d{3}[A-Z]\b/;
+                                const viagemMatch = fullText.match(viagemRegex);
+                                if (viagemMatch) {
+                                    const viagemIndex = fullText.indexOf(viagemMatch[0]);
+                                    const textAfterViagem = fullText.slice(viagemIndex + viagemMatch[0].length);
+                                    const dateMatch = textAfterViagem.match(/\b\d{4}-\d{2}-\d{2}\b/);
+                                    etd = dateMatch?.[0] || null;
+                                }
+                            }
+
+                            // Nova lógica para ETA
+                            const etaPatterns = [
+                                /\b(\d{2}-[A-Z]{3}-\d{4})\b(?=\s+\d{2}:\d{2}\s+\d+\s*x\s*40)/i,
+                                /(\d{4}-\d{2}-\d{2})\s+Please\s+consider\s+that/i,
+                                /Flag:\s+\w+\s+\d{1,2}-[A-Z]{3}-\d{4}\s+\d{2}:\d{2}\s+(\d{1,2}-[A-Z]{3}-\d{4})/i,
+                                /ETA\s*:\s*(\d{2}[A-Z]{3}\d{2})/gi,
+                                /ESTIMATED\s+CARGO\s+AVAILABILITY\s+AT\s+DESTINATION\s+HUB\s*:\s*(\d{2}\s+[A-Z]{3}\s+\d{4})/i,
+                                /(\d{2}-[A-Z]{3}-\d{4})\s+Page\s+\d+/i,
+                                /(\d{2}-[A-Z]{3}-\d{4})\s+\d{2}:\d{2}\s+[A-Z\s]+ETA:/gi,
+                                /ETA\s+DATE\s*:\s*(\d{4}\/\d{2}\/\d{2})/gi,
+                                /ETA\s*:\s*(\d{4}\/\d{2}\/\d{2})/gi,
+                                /ETA\s+(\d{4}-\d{2}-\d{2})/i,
+                                /ETA\s*:\s*(\d{2}\/\d{2}\/\d{4})/i
                             ];
                             
-                            let portoDestino = portoDestinoPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean);
-                            if (portoDestino) {
-                                portoDestino = portoDestino.split(',')[0].replace(/\s+/g, ' ').trim().toUpperCase()
-                                    .replace(/\b([A-Z])\s+([A-Z]{2,5})\b/g, '$1$2')
-                                    .replace(/\b([A-Z]{1,2})\s+([A-Z]{1,3})\b/g, (match, p1, p2) => (p1 + p2).length <= 6 ? p1 + p2 : match)
-                                    .split(' ').slice(0, 2).join(' ');
-                            }
+                            let eta = etaPatterns.map(rx => {
+                                if (rx.global) {
+                                    const matches = [...fullText.matchAll(rx)];
+                                    if (rx.source.includes('ETA\\s*:\\s*\\d{2}[A-Z]{3}\\d{2}')) {
+                                        return matches.length >= 2 ? matches[1][1] : matches[0]?.[1];
+                                    } else if (rx.source.includes('ETA:')) {
+                                        return matches.length >= 2 ? matches[1][1] : matches[0]?.[1];
+                                    } else {
+                                        return matches.length >= 2 ? matches[1][1] : matches[0]?.[1];
+                                    }
+                                }
+                                return fullText.match(rx)?.[1];
+                            }).find(Boolean);
+                            
+                            // Fallback: se nenhum padrão funcionar, extrai a segunda data após a viagem
+                            if (!eta) {
+                                const viagemRegex = /\b\d{3}[A-Z]\b/;
+                                const viagemMatch = fullText.match(viagemRegex);
+                                if (viagemMatch) {
+                                    const viagemIndex = fullText.indexOf(viagemMatch[0]);
+                                    const textAfterViagem = fullText.slice(viagemIndex + viagemMatch[0].length);
+                                    const dateMatches = [...textAfterViagem.matchAll(/\b\d{4}-\d{2}-\d{2}\b/g)];
+                                    if (dateMatches.length >= 2) {
+                                        eta = dateMatches[1][0]; // segunda data = ETA
+                                    }
+                                }
+                            }                            
 
                             console.log(`📦 [${file.name}] Enviando mesmo com possíveis campos incompletos.`);
 
@@ -174,7 +305,9 @@ sap.ui.define([
                                         armador: armador || null,
                                         portoOrigem: portoOrigem || null,
                                         destinoFinal: destinoFinal || null,
-                                        portoDestino: portoDestino || null
+                                        portoDestino: portoDestino || null,
+                                        etd: etd || null,
+                                        eta: eta || null
                                     })
                                 });
 

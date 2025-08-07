@@ -30,6 +30,11 @@ annotate service.document with @(
             },
             {
                 $Type : 'UI.DataField',
+                Label : '{@i18n>etd}',
+                Value : etd,
+            },
+            {
+                $Type : 'UI.DataField',
                 Label : '{@i18n>eta}',
                 Value : eta,
             },
@@ -83,6 +88,11 @@ annotate service.document with @(
             $Type : 'UI.DataField',
             Label : '{@i18n>armador}',
             Value : armador,
+        },
+        {
+            $Type : 'UI.DataField',
+            Label : '{@i18n>etd}',
+            Value : etd,
         },
         {
             $Type : 'UI.DataField',

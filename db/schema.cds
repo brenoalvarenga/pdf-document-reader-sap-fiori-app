@@ -8,6 +8,7 @@ entity document
     navio : String;
     viagem : String;
     armador : String;
+    etd : String;
     eta : String;
     portoOrigem : String;
     portoDestino : String;
