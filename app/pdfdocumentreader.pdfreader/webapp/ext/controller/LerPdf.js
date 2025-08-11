@@ -56,7 +56,8 @@ sap.ui.define([
                                 fullText.match(/(\b\w{3,}\d{6,})\s+Booking\s+Number\b/i) ||
                                 fullText.match(/Booking\s+Ref\.?\s*[:\-]?\s*(\w{3,}\d{6,})/i) ||
                                 fullText.match(/Nossa\s+Refer[êe]ncia\s*[:\-]?\s*(\d{6,})/i) ||
-                                fullText.match(/B\s*o+\s*k+\s*i+\s*n+\s*g(?:\s*(?:No(?:\s*\.)?|Number))?\s*[:\-]?\s*(\w{3,}\d{6,})/i);
+                                fullText.match(/B\s*o+\s*k+\s*i+\s*n+\s*g(?:\s*(?:No(?:\s*\.)?|Number))?\s*[:\-]?\s*(\w{3,}\d{6,})/i) ||
+                                fullText.match(/AM\s+Reference\s+Number\s*[:\-]?\s*(\w{3,}\d{6,})/i);
 
                             const numeroBooking = match?.[1];
 
@@ -71,9 +72,24 @@ sap.ui.define([
                                 /Quantity:\s*(?:.*?[-–])?\s*(\d{1,3})\s*x\s*40(?:'|ft)?/i,
                                 /(\d{1,3})\s*\/\s*\d{2}(?:'|ft)?\s*(HI[-\s]?CUBE|DRY|REEFER|TANK|OPEN\s*TOP|FLAT\s*RACK|CONTAINER|HC|GP)/i,
                                 /\bResumo\s*:\s*(\d+)\s*x\s*\d{2,3}\s*[A-Z]{2,}/i
-
                             ];
-                            const qtdContainer = qtdPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean);
+                            
+                            let qtdContainer = qtdPatterns.map(rx => fullText.match(rx)?.[1]).find(Boolean);
+                            
+                            // If no quantity found using existing patterns, try to count sequential container IDs
+                            if (!qtdContainer) {
+                                const containerIdMatches = fullText.match(/\b[A-Z]\d+-\d+-(\d{3})\b/g);
+                                if (containerIdMatches && containerIdMatches.length > 0) {
+                                    // Extract the sequential numbers and find the highest one
+                                    const sequentialNumbers = containerIdMatches
+                                        .map(id => parseInt(id.match(/(\d{3})$/)?.[1] || '0'))
+                                        .filter(num => num > 0);
+                                    
+                                    if (sequentialNumbers.length > 0) {
+                                        qtdContainer = Math.max(...sequentialNumbers).toString();
+                                    }
+                                }
+                            }
 
                             const navioPatterns = [
                                 /ETD:\s+([A-Z]{2,}(?:\s+[A-Z]{2,}){1,5})\s*\/\s*[A-Z0-9]{3,}/i,
@@ -85,7 +101,8 @@ sap.ui.define([
                                 /NAVIO\/VIAGEM\s*:\s*((?:[A-Z]{2,}(?:\s+|$)){1,4})\s+[A-Z0-9\-]{3,}/i,        // ajustado: {3,} em vez de {5,}
                                 /Vessel\s+([A-Z\s]+?)\s+DP\s+Voyage:/i,
                                 /MVS\s+([A-Z\s]+?)\(SG\)/i,
-                                /MVS\s+([A-Z\s]{2,})\s+\d{3}[A-Z]\b/i
+                                /MVS\s+([A-Z\s]{2,})\s+\d{3}[A-Z]\b/i,
+                                /\b([A-Z]{2,}(?:\s+[A-Z]{2,}){1,3})\s+[A-Z]{3}\d{4}\s+Port/i
                             ];
                             
                             const navio = navioPatterns
@@ -106,7 +123,8 @@ sap.ui.define([
                                 /Trunk\s+Vessel\s*:\s*[A-Z\s]+\s+([A-Z0-9()\/\-]{3,})/i,                     // ajustado: {3,} em vez de {5,}
                                 /Voyage\s+([A-Z0-9]{3,})/i,
                                 /[A-Z]{2,}(?:\s+[A-Z]{2,}){1,6}\s+(?:\([A-Z]{2,}\)\s+)?([A-Z0-9]{3,})\s+\d{4}-\d{2}-\d{2}/,
-                                /\b(\d{3}[A-Z])\b/
+                                /\b(\d{3}[A-Z])\b/,
+                                /\b[A-Z]{2,}(?:\s+[A-Z]{2,}){1,3}\s+([A-Z]{3}\d{4})\s+Port/i
                             ];
                             
                             const viagem = viagemPatterns.map(rx => fullText.match(rx)?.[1]?.trim()).find(Boolean)?.replace(/\(.*?\)$/, '').trim();
@@ -128,7 +146,8 @@ sap.ui.define([
                                 /PORT\s+OF\s+LOADING\s*:\s*([A-Z][a-z]+)(?:\s*\/|\s*,|\s)/i,
                                 /Port\s+of\s+Loading\s*:\s*([A-Z][a-z]+)(?:,|\s|$)/i,
                                 /From:\s*([A-Z][a-z]+)/i,
-                                /Data\s+est\.\s+de\s+chegada\s+([A-Z]+)/i
+                                /Data\s+est\.\s+de\s+chegada\s+([A-Z]+)/i,
+                                /\b([A-Z][A-Z\s]*[A-Z])\s+ETD\s+\d{4}-\d{2}-\d{2}/i
                             ];
                             const portoOrigem = portoPatterns.map(rx => fullText.match(rx)?.[1]?.toUpperCase()).find(Boolean);
 
@@ -160,7 +179,8 @@ sap.ui.define([
                                 /FINAL\s+DESTINATION\s*:\s*([A-Z\s,]{3,})/i,
                                 /Place\s+of\s+Delivery\s*:\s*([A-Z\s,]{3,})/i,
                                 /To:\s*([A-Z\s,]{3,})/i,
-                                /destino\s*:\s*([A-Z\s,]{3,})/i
+                                /destino\s*:\s*([A-Z\s,]{3,})/i,
+                                /\b([A-Z][A-Z\s]*[A-Z])\s+ETA\s+\d{4}-\d{2}-\d{2}/i
                               ];
                               
                               let destinoFinal = null;
@@ -193,12 +213,14 @@ sap.ui.define([
                                 /De\s+Para\s+Por[\s\S]*?\([A-Z]{5,6}\)\s+([A-Z]+(?:\s+[A-Z]+)*?)(?:\s+[A-Z\s]*?\s+\([A-Z]{5,6}\))/i,
                               
                                 /\([A-Z]{5,6}\)\s+([A-Z][A-Z\s,]+?),?\s+[A-Z]{2}\s+\([A-Z]{5,6}\)/gi,
-                              
+
+
+                                /\b([A-Z][A-Z\s]*[A-Z])\s+ETA\s+\d{4}-\d{2}-\d{2}/i,
                                 /PORTO\s+DE\s+DESCARGA\s*[:\-]?\s*([A-Z\s,]+)/i,
                                 /PORT\s+OF\s+DISCHARGE\s*[:\-]?\s*([A-Z\s,]+)/i,
                                 /PORTO\s+DESTINO\s*[:\-]?\s*([A-Z\s,]+)/i,
                                 /Port\s+of\s+Discharging\s*[:\-]?\s*([A-Z\s,]+)/i,
-                                /To:\s*([A-Z\s,]{3,})/i
+                                /To:\s*([A-Z\s,]{3,})/i,
                               ];
                               
                               let portoDestino = null;
@@ -221,7 +243,11 @@ sap.ui.define([
                                   }
                                 }
                               }
-                              
+
+                              // If destinoFinal is empty, use portoDestino value
+                              if (!destinoFinal && portoDestino) {
+                                destinoFinal = portoDestino;
+                              }                              
 
                             let etdMatch =
                                 fullText.match(/[A-Z]{2,}(?:\s+[A-Z]{2,}){1,}\s+(\d{2}-[A-Z]{3}-\d{4})/i) ||
@@ -230,7 +256,8 @@ sap.ui.define([
                                 fullText.match(/Flag:\s+\w+\s+(\d{1,2}-[A-Z]{3}-\d{4})\s+\d{2}:\d{2}\s+\d{1,2}-[A-Z]{3}-\d{4}/i) ||
                                 fullText.match(/ETD\s*:\s*(\d{4}\/\d{2}\/\d{2})/i) ||
                                 fullText.match(/ETA\/ETD\s*:\s*\d{2}[A-Z]{3}\d{2}\/(\d{2}[A-Z]{3}\d{2})/i) ||
-                                fullText.match(/ETD\s*[:\-]?\s*(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i);
+                                fullText.match(/ETD\s*[:\-]?\s*(\d{1,2}\s+[A-Z]{3}\s+\d{4})/i) ||
+                                fullText.match(/ETD\s+(\d{4}-\d{2}-\d{2})/i);
 
                             let etd = etdMatch?.[1] || null;
 
