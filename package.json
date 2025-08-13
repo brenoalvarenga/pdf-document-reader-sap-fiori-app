@@ -24,14 +24,17 @@
   "devDependencies": {
     "@cap-js/cds-types": "^0.13.0",
     "@cap-js/sqlite": "^2",
-    "@sap/dev-cap-tools": "^1.31.0"
+    "@sap/dev-cap-tools": "^1.31.0",
+    "prettier": "^3.6.2"
   },
   "scripts": {
     "start": "cds-serve",
     "start-local": "npm run generate-entry-point && npm run cds-watch",
     "generate-entry-point": "dev-cap-tools gen-entrypoint",
     "cds-watch": "cds watch --open",
-    "watch-pdfdocumentreader.pdfreader": "cds watch --open pdfdocumentreader.pdfreader/webapp/index.html?sap-ui-xx-viewCache=false"
+    "watch-pdfdocumentreader.pdfreader": "cds watch --open pdfdocumentreader.pdfreader/webapp/index.html?sap-ui-xx-viewCache=false",
+    "lint:check": "prettier --check .",
+    "lint:fix": "prettier --write ."
   },
   "cds": {
     "requires": {
